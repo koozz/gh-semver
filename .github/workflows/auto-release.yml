@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - "v*"
+  workflow_run:
+    workflows: ["Auto tag main"]
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
@@ -15,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Pre-compile GitHub extension
         uses: cli/gh-extension-precompile@v1.2.1
         with:
