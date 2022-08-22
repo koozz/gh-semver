@@ -72,7 +72,7 @@ In your workflow;
 # ...
 ```
 
-Example can be found in [.github/workflows/tag-and-release.yml][workflow]
+Example can be found in [.github/workflows/auto-tag-main.yml][workflow]
 
 ## Roadmap
 
@@ -97,4 +97,4 @@ Apache 2.0
 [GitHub commandline interface]: https://cli.github.com/
 [issue]: https://github.com/koozz/gh-semver/issues/new/choose
 [semantic version]: https://semver.org/
-[workflow]: .github/workflows/tag-and-release.yml
+[workflow]: .github/workflows/auto-tag-main.yml
