@@ -24,6 +24,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/cli/go-gh"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -200,23 +201,11 @@ func (cc *ConventionalCommits) traverse(repo *git.Repository, tagRefs map[string
 }
 
 func (cc *ConventionalCommits) getMainBranch(repo *git.Repository) (string, error) {
-	var mainBranch = ""
-
-	refsIter, err := repo.References()
+	args := []string{"repo", "view", "--json", "defaultBranchRef", "--jq", ".defaultBranchRef.name"}
+	stdOut, _, err := gh.Exec(args...)
 	if err != nil {
-		return mainBranch, err
+		return "", err
 	}
 
-	// find remote HEAD and strip off remote's name from branch
-	refsIter.ForEach(func(ref *plumbing.Reference) error {
-		if ref.Type() == plumbing.SymbolicReference {
-			if ref.Name().Short() != plumbing.HEAD.Short() {
-				remote := strings.Replace(ref.Name().Short(), plumbing.HEAD.Short(), "", -1)
-				mainBranch = strings.Replace(ref.Target().Short(), remote, "", -1)
-			}
-		}
-		return nil
-	})
-
-	return mainBranch, nil
+	return strings.TrimSpace(stdOut.String()), nil
 }

@@ -60,6 +60,8 @@ In your workflow;
           fetch-depth: 0
       - name: SemVer
         id: semver
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh extension install koozz/gh-semver
           gh semver -action

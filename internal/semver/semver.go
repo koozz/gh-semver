@@ -35,7 +35,7 @@ type SemVerExtended struct {
 	CommitHash     string
 }
 
-var branchStripCharacters = regexp.MustCompile(`[^0-9A-Za-z]`)
+var branchStripCharacters = regexp.MustCompile(`[^0-9A-Za-z-]`)
 
 func NewSemVer(major, minor, patch uint64) *SemVer {
 	return &SemVer{
