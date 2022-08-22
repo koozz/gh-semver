@@ -47,5 +47,5 @@ func main() {
 	if action {
 		format = "::set-output name=version::%s\n"
 	}
-	fmt.Printf(format, nextVersion.Print(release))
+	fmt.Printf(format, nextVersion.PrintTag(release))
 }

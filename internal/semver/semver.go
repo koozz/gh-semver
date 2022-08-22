@@ -166,7 +166,7 @@ func (s *SemVer) SetCommitHash(commitHash string) SemVer {
 	return *s
 }
 
-func (s *SemVer) Print(release bool) string {
+func (s *SemVer) PrintTag(release bool) string {
 	var version string
 	if release || s.Ext == nil {
 		version = fmt.Sprintf("%s%d.%d.%d", s.LeadingV, s.Major, s.Minor, s.Patch)
