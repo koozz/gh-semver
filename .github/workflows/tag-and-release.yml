@@ -1,5 +1,5 @@
 ---
-name: Tag on push
+name: Tag and release
 on:
   push:
     branches: [main]
@@ -28,3 +28,7 @@ jobs:
             git tag ${{ steps.semver.outputs.version }}
             git push --tags
           fi
+      - name: Pre-compile GitHub extension
+        uses: cli/gh-extension-precompile@v1.2.1
+        with:
+          go_version: "1.19"

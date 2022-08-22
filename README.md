@@ -72,6 +72,8 @@ In your workflow;
 # ...
 ```
 
+Example can be found in [.github/workflows/tag-and-release.yml][workflow]
+
 ## Roadmap
 
 Things on the roadmap:
@@ -95,3 +97,4 @@ Apache 2.0
 [GitHub commandline interface]: https://cli.github.com/
 [issue]: https://github.com/koozz/gh-semver/issues/new/choose
 [semantic version]: https://semver.org/
+[workflow]: .github/workflows/tag-and-release.yml
