@@ -31,11 +31,12 @@ import (
 )
 
 type ConventionalCommits struct {
+	gitRepo    *git.Repository
 	majorRegex *regexp.Regexp
 	minorRegex *regexp.Regexp
 	patchRegex *regexp.Regexp
-	// filterPath string
-	// prefix     string
+	filterPath string
+	prefix     string
 }
 
 type VersionBump struct {
@@ -44,25 +45,20 @@ type VersionBump struct {
 	patch bool
 }
 
-func NewConventionalCommits( /*filterPath, prefix string*/ ) *ConventionalCommits {
+func NewConventionalCommits(repo *git.Repository, filterPath, prefix string) *ConventionalCommits {
 	return &ConventionalCommits{
+		gitRepo:    repo,
 		majorRegex: regexp.MustCompile(`^(fix|feat)(\(.+\))?!: |BREAKING CHANGE: `),
 		minorRegex: regexp.MustCompile(`^feat(\(.+\))?: `),
 		patchRegex: regexp.MustCompile(`^fix(\(.+\))?: `),
-		// filterPath: filterPath,
-		// prefix:     prefix,
+		filterPath: filterPath,
+		prefix:     prefix,
 	}
 }
 
 // SemVer returns the calculated next semantic version
 func (cc *ConventionalCommits) SemVer() (*SemVer, error) {
-	// open current repository
-	repo, err := git.PlainOpenWithOptions(".", &git.PlainOpenOptions{DetectDotGit: true})
-	if err != nil {
-		return nil, fmt.Errorf("couldn't open git repository: %w", err)
-	}
-
-	tags, err := repo.Tags()
+	tags, err := cc.gitRepo.Tags()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get tags: %w", err)
 	}
@@ -83,22 +79,22 @@ func (cc *ConventionalCommits) SemVer() (*SemVer, error) {
 	}
 
 	// traverse main branch to find latest version
-	latestMain, mainVersionBump, err := cc.traverse(repo, tagRefs, git.LogOrderDFS)
+	latestMain, mainVersionBump, err := cc.traverse(tagRefs, git.LogOrderDFS)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't walk commits on main: %w", err)
 	}
-	mainBranch, err := cc.getMainBranch(repo)
+	mainBranch, err := cc.getMainBranch()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't figure out main branch: %w", err)
 	}
 	latestMain.SetBranch(mainBranch)
 
 	// traverse current branch to find latest version
-	latestBranch, branchVersionBump, err := cc.traverse(repo, tagRefs, git.LogOrderDFSPost)
+	latestBranch, branchVersionBump, err := cc.traverse(tagRefs, git.LogOrderDFSPost)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't walk commits on branch: %w", err)
 	}
-	head, err := repo.Head()
+	head, err := cc.gitRepo.Head()
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get head: %w", err)
 	}
@@ -141,7 +137,7 @@ func (cc *ConventionalCommits) SemVer() (*SemVer, error) {
 	return &newVersion, nil
 }
 
-func (cc *ConventionalCommits) traverse(repo *git.Repository, tagRefs map[string]string, order git.LogOrder) (*SemVer, *VersionBump, error) {
+func (cc *ConventionalCommits) traverse(tagRefs map[string]string, order git.LogOrder) (*SemVer, *VersionBump, error) {
 	versionBump := &VersionBump{}
 
 	var stopIter error = fmt.Errorf("stop commit iteration")
@@ -151,7 +147,7 @@ func (cc *ConventionalCommits) traverse(repo *git.Repository, tagRefs map[string
 	var commitHash string = ""
 
 	// walk commit hashes back from HEAD via main
-	commits, err := repo.Log(&git.LogOptions{Order: order})
+	commits, err := cc.gitRepo.Log(&git.LogOptions{Order: order})
 	if err != nil {
 		return nil, versionBump, fmt.Errorf("couldn't get commits: %w", err)
 	}
@@ -166,17 +162,19 @@ func (cc *ConventionalCommits) traverse(repo *git.Repository, tagRefs map[string
 		}
 		commitDistance += 1
 
-		// analyze commit message
-		if cc.patchRegex.MatchString(commit.Message) {
-			versionBump.patch = true
+		if relevant := cc.isRelevantCommit(commit); relevant {
+			// analyze commit message
+			if cc.patchRegex.MatchString(commit.Message) {
+				versionBump.patch = true
+			}
+			if cc.minorRegex.MatchString(commit.Message) {
+				versionBump.minor = true
+			}
+			if cc.majorRegex.MatchString(commit.Message) {
+				versionBump.major = true
+			}
 		}
-		if cc.minorRegex.MatchString(commit.Message) {
-			versionBump.minor = true
-		}
-		if cc.majorRegex.MatchString(commit.Message) {
-			versionBump.major = true
-		}
-		return nil
+		return err
 	})
 	if err != nil && err != stopIter {
 		return nil, versionBump, fmt.Errorf("couldn't determine latest tag: %w", err)
@@ -200,7 +198,29 @@ func (cc *ConventionalCommits) traverse(repo *git.Repository, tagRefs map[string
 	return latestVersion, versionBump, nil
 }
 
-func (cc *ConventionalCommits) getMainBranch(repo *git.Repository) (string, error) {
+func (cc *ConventionalCommits) isRelevantCommit(commit *object.Commit) bool {
+	// With no filtering, each commit is relevant
+	if cc.prefix == "" {
+		return true
+	}
+
+	// Filter on path
+	fileIter, err := commit.Files()
+	if err != nil {
+		return true
+	}
+
+	var relevant = false
+	fileIter.ForEach(func(file *object.File) error {
+		if !relevant && strings.HasPrefix(file.Name, cc.filterPath) {
+			relevant = true
+		}
+		return nil
+	})
+	return relevant
+}
+
+func (cc *ConventionalCommits) getMainBranch() (string, error) {
 	args := []string{"repo", "view", "--json", "defaultBranchRef", "--jq", ".defaultBranchRef.name"}
 	stdOut, _, err := gh.Exec(args...)
 	if err != nil {

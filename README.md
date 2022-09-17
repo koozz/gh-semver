@@ -72,6 +72,27 @@ In your workflow;
 # ...
 ```
 
+Or let the extension create the tag:
+
+```yaml
+# ...
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: SemVer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh extension install koozz/gh-semver
+          gh semver -tag
+          git push --tags
+
+# ...
+```
+
 Example can be found in [.github/workflows/auto-tag-main.yml][workflow]
 
 ## Roadmap

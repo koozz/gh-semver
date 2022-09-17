@@ -18,34 +18,68 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/koozz/gh-semver/internal/semver"
 )
 
 func main() {
 	var (
-		action bool
-		/* future feature */
-		// filterPath    string
-		// prefix        string
-		release bool
+		action     bool
+		filterPath string
+		prefix     string
+		release    bool
+		tag        bool
 	)
 	flag.BoolVar(&action, "action", false, "GitHub Action output format named 'version'")
-	/* future feature */
-	// flag.StringVar(&filterPath, "filter-path", "", "The path to filter commits (in case of a mono-repo)")
-	// flag.StringVar(&prefix, "prefix", "", "The prefix of the tag (in case of a mono-repo)")
+	flag.StringVar(&filterPath, "filter-path", "", "The path to filter commits (in case of a mono-repo)")
+	flag.StringVar(&prefix, "prefix", "", "The prefix of the tag (in case of a mono-repo)")
 	flag.BoolVar(&release, "release", false, "Force release tag")
+	flag.BoolVar(&tag, "tag", false, "Commit the tag")
 	flag.Parse()
 
-	conventionalCommits := semver.NewConventionalCommits( /* filterPath, prefix */ )
-	nextVersion, err := conventionalCommits.SemVer()
+	// open current repository
+	repo, err := git.PlainOpenWithOptions(".", &git.PlainOpenOptions{DetectDotGit: true})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v", err)
+		fmt.Fprintf(os.Stderr, "couldn't open git repository: %v\n", err)
 		os.Exit(1)
+	}
+
+	tagVersion := calculateSemVer(repo, filterPath, prefix, action, release)
+	if tag {
+		gitTag(repo, tagVersion)
 	}
 
 	format := "%s\n"
 	if action {
 		format = "::set-output name=version::%s\n"
 	}
-	fmt.Printf(format, nextVersion.PrintTag(release))
+	fmt.Printf(format, tagVersion)
+}
+
+func calculateSemVer(repo *git.Repository, filterPath, prefix string, action, release bool) string {
+	conventionalCommits := semver.NewConventionalCommits(repo, filterPath, prefix)
+	nextVersion, err := conventionalCommits.SemVer()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v", err)
+		os.Exit(1)
+	}
+	nextVersion.Prefix = prefix
+
+	return nextVersion.PrintTag(release)
+}
+
+func gitTag(repo *git.Repository, tagVersion string) {
+	if _, err := repo.Tag(tagVersion); err != nil {
+		headRef, err := repo.Head()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error determining tag: %v\n", err)
+			os.Exit(1)
+		}
+		if _, err = repo.CreateTag(tagVersion, headRef.Hash(), &git.CreateTagOptions{
+			Message: tagVersion,
+		}); err != nil {
+			fmt.Fprintf(os.Stderr, "error creating tag: %v\v", err)
+			os.Exit(1)
+		}
+	}
 }
