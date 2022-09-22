@@ -21,10 +21,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh extension install koozz/gh-semver
-          gh semver -action
-      - name: Tag
-        run: |
-          if [[ -z $(git tag -l ${{ steps.semver.outputs.version }}) ]]; then
-            git tag ${{ steps.semver.outputs.version }}
-            git push --tags
-          fi
+          gh semver -tag
+          git push --tags
