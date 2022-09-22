@@ -40,7 +40,7 @@ var branchStripCharacters = regexp.MustCompile(`[^0-9A-Za-z-]`)
 func NewSemVer(major, minor, patch uint64) *SemVer {
 	return &SemVer{
 		Prefix:   "",
-		LeadingV: "",
+		LeadingV: "v",
 		Major:    major,
 		Minor:    minor,
 		Patch:    patch,

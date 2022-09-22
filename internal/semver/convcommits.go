@@ -63,10 +63,12 @@ func (cc *ConventionalCommits) SemVer() (*SemVer, error) {
 		return nil, fmt.Errorf("couldn't get tags: %w", err)
 	}
 
-	// map tags to commit hashes
+	// map relevant tags to commit hashes
 	tagRefs := map[string]string{}
 	err = tags.ForEach(func(ref *plumbing.Reference) error {
-		tagRefs[ref.Hash().String()] = ref.Name().Short()
+		if cc.prefix == "" || strings.HasPrefix(ref.Name().Short(), cc.prefix) {
+			tagRefs[ref.Hash().String()] = ref.Name().Short()
+		}
 		return nil
 	})
 	if err != nil {
