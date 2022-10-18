@@ -3,7 +3,7 @@ module github.com/koozz/gh-semver
 go 1.18
 
 require (
-	github.com/cli/go-gh v0.1.1
+	github.com/cli/go-gh v0.1.2
 	github.com/go-git/go-git/v5 v5.4.2
 )
 
