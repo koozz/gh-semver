@@ -67,7 +67,14 @@ func (cc *ConventionalCommits) SemVer() (*SemVer, error) {
 	tagRefs := map[string]string{}
 	err = tags.ForEach(func(ref *plumbing.Reference) error {
 		if cc.prefix == "" || strings.HasPrefix(ref.Name().Short(), cc.prefix) {
-			tagRefs[ref.Hash().String()] = ref.Name().Short()
+			var sha plumbing.Hash
+			annotatedTag, _ := cc.gitRepo.TagObject(ref.Hash())
+			if annotatedTag != nil {
+				sha = annotatedTag.Target
+			} else {
+				sha = ref.Hash()
+			}
+			tagRefs[sha.String()] = ref.Name().Short()
 		}
 		return nil
 	})
