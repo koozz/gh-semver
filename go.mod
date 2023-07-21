@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/cli/go-gh v1.2.1
-	github.com/go-git/go-git/v5 v5.7.0
+	github.com/go-git/go-git/v5 v5.8.0
 )
 
 require (
