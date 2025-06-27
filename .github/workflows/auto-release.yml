@@ -22,6 +22,6 @@ jobs:
         with:
           fetch-depth: 0
       - name: Pre-compile GitHub extension
-        uses: cli/gh-extension-precompile@v2.0.0
+        uses: cli/gh-extension-precompile@v2.1.0
         with:
           go_version: "1.19"
