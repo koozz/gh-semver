@@ -24,4 +24,4 @@ jobs:
       - name: Pre-compile GitHub extension
         uses: cli/gh-extension-precompile@v2.1.0
         with:
-          go_version: "1.19"
+          go_version_file: go.mod
