@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/cli/go-gh v1.2.1
-	github.com/go-git/go-git/v5 v5.16.4
+	github.com/go-git/go-git/v5 v5.16.5
 )
 
 require (
