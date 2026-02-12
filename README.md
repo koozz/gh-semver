@@ -1,5 +1,9 @@
 # gh-semver
 
+| ⚠️ Project archived |
+|---------------------|
+| Feel free to fork   |
+
 This GitHub CLI extension can be used determine the [semantic version] to
 release.
 
